@@ -1,0 +1,17 @@
+﻿name: warm
+# Render free web services sleep after 15 minutes idle (30-50s cold start), which would make
+# the first proxy connection time out. Keep it warm from CI instead of from a laptop.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ping edge nodes
+        run: |
+          for h in lcs-edge-us.onrender.com; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 "https://$h/") || true
+            echo "$h -> $code"
+          done

@@ -1,41 +1,12 @@
 services:
-  # One blueprint, three regions, one click. Same protocol/UUID everywhere, so every
-  # instance accepts the identical VLESS-WS client config (only host differs).
+  # Render free tier gives 750 instance-hours/month per workspace, so only ONE service may
+  # run 24/7. lcs-edge-us is the always-on one; see render.regions.yaml for the extra regions
+  # and switch them on only while needed (each extra region costs its own hours).
   - type: web
     name: lcs-edge-us
     runtime: node
     plan: free
     region: oregon            # oregon | frankfurt | singapore | ohio | virginia
-    buildCommand: ""
-    startCommand: node server.js
-    envVars:
-      - key: LCS_UUID
-        value: b8842589-bf9c-4a9b-a0c0-811e6ebaa629
-      - key: LCS_PATH
-        value: /ws-f798d2b213
-      - key: NODE_VERSION
-        value: "20"
-
-  - type: web
-    name: lcs-edge-de
-    runtime: node
-    plan: free
-    region: frankfurt
-    buildCommand: ""
-    startCommand: node server.js
-    envVars:
-      - key: LCS_UUID
-        value: b8842589-bf9c-4a9b-a0c0-811e6ebaa629
-      - key: LCS_PATH
-        value: /ws-f798d2b213
-      - key: NODE_VERSION
-        value: "20"
-
-  - type: web
-    name: lcs-edge-sg
-    runtime: node
-    plan: free
-    region: singapore
     buildCommand: ""
     startCommand: node server.js
     envVars:
