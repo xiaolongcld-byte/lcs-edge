@@ -1,9 +1,9 @@
 services:
   # Render free tier gives 750 instance-hours/month per workspace, so only ONE service may
-  # run 24/7. lcs-edge-us is the always-on one; see render.regions.yaml for the extra regions
+  # run 24/7. lcs-edge-sg is the always-on one; see render.regions.yaml for the extra regions
   # and switch them on only while needed (each extra region costs its own hours).
   - type: web
-    name: lcs-edge-us
+    name: lcs-edge-sg
     runtime: node
     plan: free
     region: singapore            # oregon | frankfurt | singapore | ohio | virginia
