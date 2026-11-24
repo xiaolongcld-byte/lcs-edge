@@ -1,6 +1,9 @@
-﻿name: warm
-# Render free web services sleep after 15 minutes idle (30-50s cold start), which would make
-# the first proxy connection time out. Keep it warm from CI instead of from a laptop.
+name: warm
+# Render free web services sleep after 15 minutes idle (~40s cold start).
+# Strategy: keep ONLY the Singapore edge hot (750 instance-hours/month is a workspace-wide
+# budget and two always-on services would exhaust it in ~15 days).
+# lcs-edge-us (Oregon) is intentionally left to spin down: it stays as a cold standby that
+# wakes on demand in 30-50s when the US_OR node is selected in the client.
 on:
   schedule:
     - cron: "*/10 * * * *"
@@ -9,9 +12,9 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: ping edge nodes
+      - name: ping hot edge node
         run: |
-          for h in lcs-edge-us.onrender.com; do
+          for h in lcs-edge-sg.onrender.com; do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 "https://$h/") || true
             echo "$h -> $code"
           done
