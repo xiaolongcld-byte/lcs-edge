@@ -6,7 +6,7 @@ services:
     name: lcs-edge-us
     runtime: node
     plan: free
-    region: oregon            # oregon | frankfurt | singapore | ohio | virginia
+    region: singapore            # oregon | frankfurt | singapore | ohio | virginia
     buildCommand: ""
     startCommand: node server.js
     envVars:
@@ -16,3 +16,4 @@ services:
         value: /ws-f798d2b213
       - key: NODE_VERSION
         value: "20"
+
