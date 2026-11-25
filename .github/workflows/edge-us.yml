@@ -1,0 +1,62 @@
+name: edge-us
+# Spawn N VLESS-over-WS edge nodes on US GitHub runners via cloudflared quick tunnels.
+# Runner egress = US. Tunnel URL is committed back to edge_urls.json so the client can read it.
+on:
+  workflow_dispatch:
+    inputs:
+      count:
+        description: 'number of tunnels'
+        required: false
+        default: '3'
+permissions:
+  contents: write
+jobs:
+  spawn:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - name: install cloudflared
+        run: |
+          curl -L --retry 3 https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /tmp/cloudflared
+          chmod +x /tmp/cloudflared
+          /tmp/cloudflared --version
+      - name: start vless + tunnels
+        run: |
+          COUNT=${{ github.event.inputs.count || '3' }}
+          : > /tmp/tunnel_urls.txt
+          for i in $(seq 1 $COUNT); do
+            PORT=$((8100 + i))
+            PORT=$PORT LCS_UUID=b8842589-bf9c-4a9b-a0c0-811e6ebaa629 LCS_PATH=/ws-f798d2b213 node server.js > /tmp/node_$i.log 2>&1 &
+            sleep 1
+            /tmp/cloudflared tunnel --no-autoupdate --url http://127.0.0.1:$PORT > /tmp/cf_$i.log 2>&1 &
+            echo "tunnel $i started on port $PORT"
+          done
+          for i in $(seq 1 $COUNT); do
+            URL=""
+            for t in $(seq 1 40); do
+              URL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' /tmp/cf_$i.log | head -1)
+              [ -n "$URL" ] && break
+              sleep 2
+            done
+            echo "$URL" >> /tmp/tunnel_urls.txt
+            echo "EDGE_URL_$i=$URL"
+          done
+          cat /tmp/tunnel_urls.txt
+      - name: publish urls
+        run: |
+          python3 - <<'PY'
+          import json, datetime
+          urls=[l.strip() for l in open('/tmp/tunnel_urls.txt') if l.strip()]
+          data={'updated': datetime.datetime.utcnow().isoformat()+'Z','urls':urls,
+                'uuid':'b8842589-bf9c-4a9b-a0c0-811e6ebaa629','path':'/ws-f798d2b213'}
+          json.dump(data,open('edge_urls.json','w'),indent=2)
+          print(json.dumps(data,indent=2))
+          PY
+          git config user.name "lcs-bot"
+          git config user.email "lcs@lcs.local"
+          git add edge_urls.json
+          git commit -m "edge-us urls update" || echo "nothing to commit"
+          git push https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git HEAD:main || echo "push failed"
+      - name: keep tunnels alive
+        run: sleep 20000
